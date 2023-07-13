@@ -3,7 +3,7 @@
 
 Servo EduServo;
 
-SoftwareSerial BTSerial(3, 4);  // HC-06 모듈을 연결한 소프트웨어 시리얼 포트
+SoftwareSerial BTSerial(8, 4);  // HC-06 모듈을 연결한 소프트웨어 시리얼 포트
 int trigPin = 13;
 int echoPin = 12;
 int Ultra_d = 0;
@@ -12,17 +12,21 @@ int val = 0;
 
 int RightMotor_E_pin = 5;
 int LeftMotor_E_pin = 6;
-int RightMotor_1_pin = 8;
+int RightMotor_1_pin = 3;
 int RightMotor_2_pin = 9;
 int LeftMotor_3_pin = 10;
 int LeftMotor_4_pin = 11;
 
-int L_MotorSpeed1 = 160;
+int L_MotorSpeed = 150;
+int R_MotorSpeed = 130;
+int L_MotorSpeed_1 = 200;
+int R_MotorSpeed_1 = 200;
+int L_MotorSpeed_2 = 180;
+int R_MotorSpeed_2 = 160;
+int L_MotorSpeed1 = 200;
 int R_MotorSpeed1 = 150;
-int L_MotorSpeed2 = 160;
-int R_MotorSpeed2 = 150;
-int L_MotorSpeed3 = 160;
-int R_MotorSpeed3 = 150;
+int L_MotorSpeed2 = 150;
+int R_MotorSpeed2 = 200;
 
 int L_Line = A5;
 int C_Line = A4;
@@ -75,12 +79,12 @@ void loop()
     else if (toSend == '3')
     {
       isStopped = false;  // 정지 상태 해제
-      motor_role(L_MotorSpeed, -R_MotorSpeed);
+      motor_role(-L_MotorSpeed_2, R_MotorSpeed_2);
     }
     else if (toSend == '4')
     {
       isStopped = false;  // 정지 상태 해제
-      motor_role(-L_MotorSpeed, R_MotorSpeed);
+      motor_role(L_MotorSpeed_2, -R_MotorSpeed_2);
     }
     else if (toSend == '0')
     {
@@ -89,7 +93,8 @@ void loop()
     }
     else if (toSend == '5')
     {
-      while (toSend == '5')  // 5를 입력할 때까지 반복 실행
+      isStopped = false;  // 정지 상태 해제
+      while (true)
       {
         int L = digitalRead(L_Line);
         int C = digitalRead(C_Line);
@@ -103,24 +108,26 @@ void loop()
         Serial.print(R);
         Serial.print("   ");
 
-        if (L == LOW && C == LOW && R == LOW)
-        {
-          L = SL; C = SC; R = SR;
-        }
-
         if (L == LOW && C == HIGH && R == LOW)
         {
+            // 모터 정지
           motor_role(L_MotorSpeed, R_MotorSpeed);
           Serial.println("직진");
         }
         else if (L == LOW && R == HIGH)
         {
-          motor_role(-L_MotorSpeed, R_MotorSpeed);
+          stop_motors();  // 모터 정지
+          motor_role(-L_MotorSpeed2, -R_MotorSpeed2);
+          delay(100);
+          motor_role(L_MotorSpeed_2, -R_MotorSpeed_2);
           Serial.println("우회전");
         }
         else if (L == HIGH && R == LOW)
         {
-          motor_role(L_MotorSpeed, -R_MotorSpeed);
+          stop_motors();  // 모터 정지
+          motor_role(-L_MotorSpeed1, -R_MotorSpeed1);
+          delay(100);
+          motor_role(-L_MotorSpeed_2, R_MotorSpeed_2);
           Serial.println("좌회전");
         }
         else if (L == HIGH && R == HIGH)
@@ -128,7 +135,6 @@ void loop()
           stop_motors();  // 모터 정지
           Serial.println("정지");
         }
-        SL = L; SC = C; SR = R;
 
         if (BTSerial.available())
         {
@@ -137,7 +143,11 @@ void loop()
             break;
         }
       }
+      isStopped = true;  // 정지 상태로 설정
+      stop_motors();     // 모터 정지
     }
+
+
     else if (toSend == '6')
     {
       while (toSend == '6')  // 6을 입력할 때까지 반복 실행
@@ -151,7 +161,7 @@ void loop()
           if (Ultra_d < 150)
           {
             Serial.println("150 이하.");
-            motor_role(-L_MotorSpeed, -R_MotorSpeed);
+            motor_role(-L_MotorSpeed_1, -R_MotorSpeed_1);
             delay(1000);
             stop_motors();  // 모터 정지
             delay(200);
@@ -167,9 +177,9 @@ void loop()
               Serial.println("우회전.");
               stop_motors();  // 모터 정지
               delay(500);
-              motor_role(-L_MotorSpeed, -R_MotorSpeed);
+              motor_role(-L_MotorSpeed_1, -R_MotorSpeed_1);
               delay(500);
-              motor_role(-L_MotorSpeed, R_MotorSpeed);
+              motor_role(L_MotorSpeed_1, -R_MotorSpeed_1);
               delay(800);
             }
             else if (val == 1)
@@ -177,9 +187,9 @@ void loop()
               Serial.println("좌회전.");
               stop_motors();  // 모터 정지
               delay(500);
-              motor_role(-L_MotorSpeed, -R_MotorSpeed);
+              motor_role(-L_MotorSpeed_1, -R_MotorSpeed_1);
               delay(500);
-              motor_role(L_MotorSpeed, -R_MotorSpeed);
+              motor_role(-L_MotorSpeed_1, R_MotorSpeed_1);
               delay(800);
             }
           }
@@ -204,6 +214,7 @@ void stop_motors()
 {
   analogWrite(RightMotor_E_pin, 0);
   analogWrite(LeftMotor_E_pin, 0);
+  delay(50);
 }
 
 void motor_role(int L_motor, int R_motor)
